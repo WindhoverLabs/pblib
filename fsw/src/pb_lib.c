@@ -1,68 +1,223 @@
-/*************************************************************************
-** File:
-**   $Id: cfs_utils.c 1.13 2011/05/20 13:24:20EDT lwalling Exp  $
-**
-** Purpose: 
-**   Shared library functions for CFS applications
-**
-**   $Log: cfs_utils.c  $
-**   Revision 1.13 2011/05/20 13:24:20EDT lwalling 
-**   Modify packet filter to match algorithm used by SDO, GPM, etc.
-**   Revision 1.12 2010/09/21 14:36:34EDT wmoleski 
-**   The sequence count in a ccsds packet header consists of the lower 14 bits. The code was using
-**   the entire 16 bit value to determine whether the packet should be filtered. This was changed to
-**   extract only the lower 14 bits for the sequence count.
-**   Revision 1.11 2010/09/21 08:50:05EDT wmoleski 
-**   Deleted the line of code that checked if the currect character was a '%' for the valid filename check function.
-**   Revision 1.10 2009/08/31 17:46:41EDT lwalling 
-**   Add function CFS_VerifyString() to CFS Library
-**   Revision 1.9 2009/08/13 10:04:30EDT lwalling 
-**   Change test for (N >= X) to (N > X) in CFS_IsPacketFiltered()
-**   Revision 1.8 2009/05/26 13:31:07EDT lwalling 
-**   Create common packet filter function in global CFS library
-**   Revision 1.7 2008/10/06 09:38:25EDT rjmcgraw 
-**   DCR4400:1 Changed return on CFS_LibInit from void to int32
-**   Revision 1.6 2008/09/19 15:30:51EDT rjmcgraw 
-**   DCR4337:1 Added #include version.h and display version after initialization 
-**     is complete
-**   Revision 1.5 2008/09/09 10:59:32EDT njyanchik 
-**   I accidentally  updated the list of allowable characters with a list of 
-**     not-allowed characters. I
-**   need to fix it.
-**   Revision 1.4 2008/08/08 15:38:01BST njyanchik 
-**   Since there was already a function for detecting invalid file names, I 
-**     updated the list of the
-**   invalid characters to the list that is specified in the DCR.
-**   Revision 1.3 2008/05/15 14:40:33BST rjmcgraw 
-**   DCR2179:1 Changed fucntion call OS_SymLookup to OS_SymbolLookup
-**   Revision 1.2 2008/05/13 13:47:02EDT rjmcgraw 
-**   DCR2179:1 Changed include filename from cfs_lib.h to cfs_utils.h
-**   Revision 1.1 2008/05/13 13:13:28EDT rjmcgraw 
-**   Initial revision
-**   Member added to CFS project 
-** 
-*************************************************************************/
+/****************************************************************************
+ *
+ *   Copyright (c) 2016-2017 Windhover Labs, L.L.C. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name Windhover Labs nor the names of its contributors 
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ ****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*************************************************************************
 ** Includes
 *************************************************************************/
 
+#include "pb_lib.h"
 #include "pb_version.h"
-#include "cfe.h"
 
-/*************************************************************************
-** Macro Definitions
-*************************************************************************/
+PBLIB_AppData_t PBLIB_AppData;
 
 
-/*************************************************************************
-** Private Function Prototypes
-*************************************************************************/
+uint32 CFE_ES_RegisterSerializationFuncs()
+{
+	int32 Status = CFE_SUCCESS;
 
+	/* Register each message with PBL */
+	Status = PBLIB_RegisterCmdMessage(0x1806, 20, "CFE_ES_SetMaxPRCountCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterTlmMessage(0x080F, "CFE_ES_ShellPacket_t");
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 7, "CFE_ES_AppReloadCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterTlmMessage(0x0800, "CFE_ES_HkPacket_t");
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 22, "CFE_ES_TlmPoolStatsCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 14, "CFE_ES_PerfStartCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 3, "CFE_ES_ShellCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 24, "CFE_ES_QueryAllTasksCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 17, "CFE_ES_PerfSetTrigMaskCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterTlmMessage(0x080B, "CFE_ES_OneAppTlm_t");
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 9, "CFE_ES_QueryAllCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 2, "CFE_ES_RestartCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 16, "CFE_ES_PerfSetFilterMaskCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 21, "CFE_ES_DeleteCDSCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 6, "CFE_ES_AppNameCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 15, "CFE_ES_PerfStopCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 18, "CFE_ES_OverWriteSysLogCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 11, "CFE_ES_WriteSyslogCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 5, "CFE_ES_AppNameCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 4, "CFE_ES_StartAppCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 8, "CFE_ES_AppNameCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 23, "CFE_ES_DumpCDSRegCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+	
+	Status = PBLIB_RegisterCmdMessage(0x1806, 13, "CFE_ES_WriteERlogCmd_t"); 
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+
+	Status = PBLIB_RegisterTlmMessage(0x0a34, "PX4_PositionSetpointTripletMsg_t");
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+
+    Status = PBLIB_RegisterTlmMessage(0x0a27, "PX4_ManualControlSetpointMsg_t");
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+
+    Status = PBLIB_RegisterTlmMessage(0x0a4d, "PX4_VehicleCommandMsg_t");
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}	
+
+	Status = PBLIB_RegisterTlmMessage(0x0c55, "SENS_HkTlm_t");
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+
+	Status = PBLIB_RegisterTlmMessage(0x0c54, "GPS_HkTlm_t");
+	if (Status != CFE_SUCCESS)
+	{
+		goto CFE_ES_RegisterSerializationFuncs_Exit_Tag;
+	}
+
+CFE_ES_RegisterSerializationFuncs_Exit_Tag:
+    return Status;
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
@@ -72,18 +227,350 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int32 PBLIB_LibInit(void)
 {
-    OS_printf ("PBLIB Initialized.  Version %d.%d.%d.%d\n",
+	int32 Status = CFE_SUCCESS;
+
+	/* Create mutex for registration table */
+	Status = OS_MutSemCreate(&PBLIB_AppData.RegTblMutex, PBLIB_REGTBL_MUTEX_NAME, 0);
+	if (Status != CFE_SUCCESS)
+	{
+		goto PBLIB_LibInit_Exit_Tag;
+	}
+
+	Status = CFE_ES_RegisterSerializationFuncs();
+	if (Status != CFE_SUCCESS)
+	{
+		goto PBLIB_LibInit_Exit_Tag;
+	}
+
+PBLIB_LibInit_Exit_Tag:
+	if (Status == CFE_SUCCESS)
+	{
+		OS_printf ("PBLIB Initialized.  Version %d.%d.%d.%d\n",
     		PBLIB_MAJOR_VERSION,
 			PBLIB_MINOR_VERSION,
 			PBLIB_REVISION,
 			PBLIB_MISSION_REV);
+	}
 
-
-    return OS_SUCCESS;
+    return Status;
  
 }/* End PBLIB_LibInit */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Register Command Message		                                   */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int32 PBLIB_RegisterCmdMessage(CFE_SB_MsgId_t msgId, uint16 cmdCode, char *msgName)
+{
+    int32 		status = -2;
+    int32 i = 0;
+
+    if(msgId == 0)
+    {
+    	status = -1;
+    	goto PBLIB_RegisterCmdMessage_Exit_Tag;
+    }
+
+    /* Lock the mutex */
+	OS_MutSemTake(PBLIB_AppData.RegTblMutex);
+
+	/* Find an empty registration entry */
+    for(i = 0; i < PBLIB_REG_MAX_ENTRY; ++i)
+    {
+    	if(PBLIB_AppData.RegisteredFuncs[i].msgId == 0)
+    	{
+    		PBLIB_AppData.RegisteredFuncs[i].msgId = msgId;
+    		PBLIB_AppData.RegisteredFuncs[i].cmdCode = cmdCode;
+    		strcpy(PBLIB_AppData.RegisteredFuncs[i].msgName, msgName);
+    		status = 0;
+    		break;
+    	}
+    }
+
+    /* Unlock the mutex */
+	OS_MutSemGive(PBLIB_AppData.RegTblMutex);
+
+PBLIB_RegisterCmdMessage_Exit_Tag:
+    return status;
+}/* End PBLIB_RegisterCmdMessage */
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Register Telemetry Message		                               */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int32 PBLIB_RegisterTlmMessage(CFE_SB_MsgId_t msgId, char *msgName)
+{
+    int32 		status = -2;
+    int32 i = 0;
+
+    if(msgId == 0)
+    {
+    	status = -1;
+    	goto PBLIB_RegisterTlmMessage_Exit_Tag;
+    }
+
+    /* Lock the mutex */
+	OS_MutSemTake(PBLIB_AppData.RegTblMutex);
+
+	/* Find an empty registration entry */
+    for(i = 0; i < PBLIB_REG_MAX_ENTRY; ++i)
+    {
+    	if(PBLIB_AppData.RegisteredFuncs[i].msgId == 0)
+    	{
+    		PBLIB_AppData.RegisteredFuncs[i].msgId = msgId;
+    		PBLIB_AppData.RegisteredFuncs[i].cmdCode = 0;
+    		strcpy(PBLIB_AppData.RegisteredFuncs[i].msgName, msgName);
+    		status = 0;
+    		break;
+    	}
+    }
+
+    /* Unlock the mutex */
+	OS_MutSemGive(PBLIB_AppData.RegTblMutex);
+
+PBLIB_RegisterTlmMessage_Exit_Tag:
+    return status;
+}/* End PBLIB_RegisterTlmMessage */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Deregister Message		                                       */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int32 PBLIB_DeregisterCmdMessage(CFE_SB_MsgId_t msgId, uint16 cmdCode)
+{
+    int32 		status = -2;
+    int32 i = 0;
+
+    if(msgId == 0)
+    {
+    	status = -1;
+    	goto PBLIB_DeregisterCmdMessage_Exit_Tag;
+    }
+
+    /* Lock the mutex */
+	OS_MutSemTake(PBLIB_AppData.RegTblMutex);
+
+	/* Find the registration entry */
+    for(i = 0; i < PBLIB_REG_MAX_ENTRY; ++i)
+    {
+    	if(PBLIB_AppData.RegisteredFuncs[i].msgId == msgId && PBLIB_AppData.RegisteredFuncs[i].cmdCode == cmdCode)
+    	{
+    		PBLIB_AppData.RegisteredFuncs[i].msgId = 0;
+    		PBLIB_AppData.RegisteredFuncs[i].cmdCode = 0;
+    		strcpy(PBLIB_AppData.RegisteredFuncs[i].msgName, "\0");
+    		status = 0;
+    		break;
+    	}
+    }
+
+    /* Unlock the mutex */
+	OS_MutSemGive(PBLIB_AppData.RegTblMutex);
+
+PBLIB_DeregisterCmdMessage_Exit_Tag:
+    return status;
+}/* End PBLIB_DeregisterCmdMessage */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Deregister Telemetry Message		                               */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int32 PBLIB_DeregisterTlmMessage(CFE_SB_MsgId_t msgId)
+{
+    int32 		status = -2;
+    int32 i = 0;
+
+    if(msgId == 0)
+    {
+    	status = -1;
+    	goto PBLIB_DeregisterTlmMessage_Exit_Tag;
+    }
+
+    /* Lock the mutex */
+	OS_MutSemTake(PBLIB_AppData.RegTblMutex);
+
+	/* Find the registration entry */
+    for(i = 0; i < PBLIB_REG_MAX_ENTRY; ++i)
+    {
+    	if(PBLIB_AppData.RegisteredFuncs[i].msgId == msgId && PBLIB_AppData.RegisteredFuncs[i].cmdCode == 0)
+    	{
+    		PBLIB_AppData.RegisteredFuncs[i].msgId = 0;
+    		PBLIB_AppData.RegisteredFuncs[i].cmdCode = 0;
+    		strcpy(PBLIB_AppData.RegisteredFuncs[i].msgName, "\0");
+    		status = 0;
+    		break;
+    	}
+    }
+
+    /* Unlock the mutex */
+	OS_MutSemGive(PBLIB_AppData.RegTblMutex);
+
+PBLIB_DeregisterTlmMessage_Exit_Tag:
+    return status;
+}/* End PBLIB_DeregisterCmdMessage */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Get Command Serialization Function Address                      */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+PBLib_EncodeFuncPtr_t PBLIB_GetCmdSerializationFunc(CFE_SB_MsgId_t msgId, uint16 cmdCode)
+{
+	PBLib_EncodeFuncPtr_t funcAddr = 0;
+	char encFuncName[64];
+	int32 status = 0;
+    int32 i = 0;
+
+    if(msgId == 0)
+    {
+    	goto PBLIB_GetCmdSerializationFunc_Exit_Tag;
+    }
+
+    /* Lock the mutex */
+	OS_MutSemTake(PBLIB_AppData.RegTblMutex);
+
+	/* Find the registration entry */
+    for(i = 0; i < PBLIB_REG_MAX_ENTRY; ++i)
+    {
+    	if(PBLIB_AppData.RegisteredFuncs[i].msgId == msgId && PBLIB_AppData.RegisteredFuncs[i].cmdCode == cmdCode)
+    	{
+    		strcpy(encFuncName, PBLIB_AppData.RegisteredFuncs[i].msgName);
+			strcat(encFuncName, "_Enc");
+			status = OS_SymbolLookup((cpuaddr*)&funcAddr, (const char*)&encFuncName);
+    		break;
+    	}
+    }
+
+    /* Unlock the mutex */
+	OS_MutSemGive(PBLIB_AppData.RegTblMutex);
+
+
+PBLIB_GetCmdSerializationFunc_Exit_Tag:
+    return funcAddr;
+}/* End PBLIB_GetCmdSerializationFunc */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Get Telemetry Serialization Function Address                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+PBLib_EncodeFuncPtr_t PBLIB_GetTlmSerializationFunc(CFE_SB_MsgId_t msgId)
+{
+	PBLib_EncodeFuncPtr_t funcAddr = 0;
+	char encFuncName[64];
+	int32 status = 0;
+    int32 i = 0;
+
+    if(msgId == 0)
+    {
+    	goto PBLIB_GetTlmSerializationFunc_Exit_Tag;
+    }
+
+    /* Lock the mutex */
+	OS_MutSemTake(PBLIB_AppData.RegTblMutex);
+
+	/* Find the registration entry */
+    for(i = 0; i < PBLIB_REG_MAX_ENTRY; ++i)
+    {
+    	if(PBLIB_AppData.RegisteredFuncs[i].msgId == msgId && PBLIB_AppData.RegisteredFuncs[i].cmdCode == 0)
+    	{
+    		strcpy(encFuncName, PBLIB_AppData.RegisteredFuncs[i].msgName);
+			strcat(encFuncName, "_Enc");
+			status = OS_SymbolLookup((cpuaddr*)&funcAddr, (const char*)&encFuncName);
+    		break;
+    	}
+    }
+
+    /* Unlock the mutex */
+	OS_MutSemGive(PBLIB_AppData.RegTblMutex);
+
+
+PBLIB_GetTlmSerializationFunc_Exit_Tag:
+    return funcAddr;
+}/* End PBLIB_GetCmdSerializationFunc */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Get Command Deserialization Function Address                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+PBLib_DecodeFuncPtr_t PBLIB_GetCmdDeserializationFunc(CFE_SB_MsgId_t msgId, uint16 cmdCode)
+{
+	PBLib_DecodeFuncPtr_t funcAddr = 0;
+	char decFuncName[64];
+	int32 status = 0;
+    int32 i = 0;
+
+    if(msgId == 0)
+    {
+    	goto PBLIB_GetCmdDeserializationFunc_Exit_Tag;
+    }
+
+    /* Lock the mutex */
+	OS_MutSemTake(PBLIB_AppData.RegTblMutex);
+
+    /* Find the registration entry */
+    for(i = 0; i < PBLIB_REG_MAX_ENTRY; ++i)
+    {
+    	if(PBLIB_AppData.RegisteredFuncs[i].msgId == msgId && PBLIB_AppData.RegisteredFuncs[i].cmdCode == cmdCode)
+    	{
+    		strcpy(decFuncName, PBLIB_AppData.RegisteredFuncs[i].msgName);
+			strcat(decFuncName, "_Dec");
+    		status = OS_SymbolLookup((cpuaddr*)&funcAddr, (const char*)&decFuncName);
+    		break;
+    	}
+    }
+
+    /* Unlock the mutex */
+	OS_MutSemGive(PBLIB_AppData.RegTblMutex);
+
+PBLIB_GetCmdDeserializationFunc_Exit_Tag:
+    return funcAddr;
+}/* End PBLIB_GetCmdSerializationFunc */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Get Telemetry Deserialization Function Address                  */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+PBLib_DecodeFuncPtr_t PBLIB_GetTlmDeserializationFunc(CFE_SB_MsgId_t msgId)
+{
+	PBLib_DecodeFuncPtr_t funcAddr = 0;
+	char decFuncName[64];
+	int32 status = 0;
+    int32 i = 0;
+
+    if(msgId == 0)
+    {
+    	goto PBLIB_GetTlmDeserializationFunc_Exit_Tag;
+    }
+
+    /* Lock the mutex */
+	OS_MutSemTake(PBLIB_AppData.RegTblMutex);
+
+    /* Find the registration entry */
+    for(i = 0; i < PBLIB_REG_MAX_ENTRY; ++i)
+    {
+    	if(PBLIB_AppData.RegisteredFuncs[i].msgId == msgId && PBLIB_AppData.RegisteredFuncs[i].cmdCode == 0)
+    	{
+    		strcpy(decFuncName, PBLIB_AppData.RegisteredFuncs[i].msgName);
+			strcat(decFuncName, "_Dec");
+    		status = OS_SymbolLookup((cpuaddr*)&funcAddr, (const char*)&decFuncName);
+    		break;
+    	}
+    }
+
+    /* Unlock the mutex */
+	OS_MutSemGive(PBLIB_AppData.RegTblMutex);
+
+PBLIB_GetTlmDeserializationFunc_Exit_Tag:
+    return funcAddr;
+}/* End PBLIB_GetTlmSerializationFunc */
 
 /************************/
 /*  End of File Comment */
 /************************/
-
