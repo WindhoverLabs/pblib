@@ -96,6 +96,8 @@ add_airliner_app_def(pblib
         ${PROTOBUF_MSGS_DIR}/px4_manual_control_setpoint.pb.c
         ${PROTOBUF_MSGS_DIR}/px4_vehicle_command_msg.pb.h
         ${PROTOBUF_MSGS_DIR}/px4_vehicle_command_msg.pb.c
+        ${PROTOBUF_MSGS_DIR}/px4_vehicle_global_position_msg.pb.h
+        ${PROTOBUF_MSGS_DIR}/px4_vehicle_global_position_msg.pb.c
         ${PROTOBUF_MSGS_DIR}/sens_hk.pb.h
         ${PROTOBUF_MSGS_DIR}/sens_hk.pb.c
         ${PROTOBUF_MSGS_DIR}/gps_hk.pb.h
@@ -111,8 +113,8 @@ add_airliner_app_def(pblib
     INCLUDES
         ${PROTOBUF_MSGS_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/
-	${CMAKE_CURRENT_SOURCE_DIR}/../public_inc/
-	${CMAKE_CURRENT_SOURCE_DIR}/../msgs/proto_defs/
+    	${CMAKE_CURRENT_SOURCE_DIR}/../public_inc/
+    	${CMAKE_CURRENT_SOURCE_DIR}/../msgs/proto_defs/
 
     PROTOBUF_DEFS
         ${CMAKE_CURRENT_SOURCE_DIR}/../msgs/proto_defs/es_perf_start.proto
@@ -141,7 +143,8 @@ add_airliner_app_def(pblib
         ${CMAKE_CURRENT_SOURCE_DIR}/../msgs/proto_defs/px4_vehicle_command_msg.proto
         ${CMAKE_CURRENT_SOURCE_DIR}/../msgs/proto_defs/sens_hk.proto
         ${CMAKE_CURRENT_SOURCE_DIR}/../msgs/proto_defs/gps_hk.proto
-        
+        ${CMAKE_CURRENT_SOURCE_DIR}/../msgs/proto_defs/px4_vehicle_global_position_msg.proto
+
     PROTOBUF_MSGS_DIR        
         ${PROTOBUF_MSGS_DIR}
 
