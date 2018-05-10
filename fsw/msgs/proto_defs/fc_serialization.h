@@ -4,11 +4,11 @@
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "pb_lib.h"
-#include "px4_msgs.h"
 #include "px4_vehicle_command_msg.pb.h"
 #include "px4_position_setpoint_triplet.pb.h"
 #include "px4_vehicle_global_position_msg.pb.h"
 #include "px4_manual_control_setpoint.pb.h"
+#include "px4_msgs.h"
 
 #ifdef __cplusplus
 extern "C" {
