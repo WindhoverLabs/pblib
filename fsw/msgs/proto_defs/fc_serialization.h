@@ -8,6 +8,7 @@
 #include "px4_position_setpoint_triplet.pb.h"
 #include "px4_vehicle_global_position_msg.pb.h"
 #include "px4_manual_control_setpoint.pb.h"
+#include "px4lib.h"
 #include "px4_msgs.h"
 
 #ifdef __cplusplus
