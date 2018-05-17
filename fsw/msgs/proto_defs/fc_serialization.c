@@ -215,10 +215,12 @@ uint32 PX4_PositionSetpointTripletMsg_t_Dec(const char *inBuffer, uint32 inSize,
 		return 0;
 	}
 
-    inOutObject->Timestamp = pbMsg.Timestamp;
-/*    inOutObject->Previous.Timestamp = PX4LIB_GetPX4TimeUs();*/
-/*    inOutObject->Current.Timestamp = PX4LIB_GetPX4TimeUs();*/
-/*    inOutObject->Next.Timestamp = PX4LIB_GetPX4TimeUs();*/
+    /* TODO: These timestamps are set here manually for the time being. */
+    inOutObject->Timestamp = PX4LIB_GetPX4TimeUs();
+    inOutObject->Previous.Timestamp = PX4LIB_GetPX4TimeUs();
+    inOutObject->Current.Timestamp = PX4LIB_GetPX4TimeUs();
+    inOutObject->Next.Timestamp = PX4LIB_GetPX4TimeUs();
+
     inOutObject->Current.AccelerationIsForce = pbMsg.Current.AccelerationIsForce;
     inOutObject->Current.DisableMcYawControl = pbMsg.Current.DisableMcYawControl;
     inOutObject->Current.Yaw = pbMsg.Current.Yaw;
