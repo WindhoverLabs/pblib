@@ -31,7 +31,6 @@
  *
  ****************************************************************************/
 
-
 /*************************************************************************
 ** Includes
 *************************************************************************/
@@ -42,6 +41,11 @@
 PBLIB_AppData_t PBLIB_AppData;
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Register CFE ES serialization functions                         */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 uint32 CFE_ES_RegisterSerializationFuncs()
 {
 	int32 Status = CFE_SUCCESS;
@@ -262,6 +266,7 @@ PBLIB_LibInit_Exit_Tag:
  
 }/* End PBLIB_LibInit */
 
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
 /* Register Command Message		                                   */
@@ -341,6 +346,7 @@ PBLIB_RegisterTlmMessage_Exit_Tag:
     return status;
 }/* End PBLIB_RegisterTlmMessage */
 
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
 /* Deregister Message		                                       */
@@ -380,6 +386,7 @@ PBLIB_DeregisterCmdMessage_Exit_Tag:
     return status;
 }/* End PBLIB_DeregisterCmdMessage */
 
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
 /* Deregister Telemetry Message		                               */
@@ -418,6 +425,7 @@ int32 PBLIB_DeregisterTlmMessage(CFE_SB_MsgId_t msgId)
 PBLIB_DeregisterTlmMessage_Exit_Tag:
     return status;
 }/* End PBLIB_DeregisterCmdMessage */
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
@@ -499,6 +507,7 @@ PBLIB_GetTlmSerializationFunc_Exit_Tag:
     return funcAddr;
 }/* End PBLIB_GetCmdSerializationFunc */
 
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
 /* Get Command Deserialization Function Address                    */
@@ -537,6 +546,7 @@ PBLib_DecodeFuncPtr_t PBLIB_GetCmdDeserializationFunc(CFE_SB_MsgId_t msgId, uint
 PBLIB_GetCmdDeserializationFunc_Exit_Tag:
     return funcAddr;
 }/* End PBLIB_GetCmdSerializationFunc */
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */

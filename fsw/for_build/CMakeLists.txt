@@ -151,6 +151,9 @@ add_airliner_app_def(pblib
     # This application has a public include header.  Add it so all the other applications can access it.
     PUBLIC_INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}/../public_inc/
+
+    USER_DOCS   ${CMAKE_CURRENT_SOURCE_DIR}/user_doxy.in
+    DESIGN_DOCS ${CMAKE_CURRENT_SOURCE_DIR}/detail_doxy.in
 )
 
 add_airliner_app_unit_test(pblib-ut
