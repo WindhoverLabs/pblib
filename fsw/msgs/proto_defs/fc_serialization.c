@@ -120,6 +120,7 @@ uint32 PX4_PositionSetpointTripletMsg_t_Enc(const PX4_PositionSetpointTripletMsg
     pbMsg.Current.AccelerationValid = inObject->Current.AccelerationValid;
     pbMsg.Current.LoiterRadius = inObject->Current.LoiterRadius;
     pbMsg.Current.Alt = inObject->Current.Alt;
+    pbMsg.Current.VelocityFrame = inObject->Current.VelocityFrame;
     pbMsg.Next.AccelerationIsForce = inObject->Next.AccelerationIsForce;
     pbMsg.Next.DisableMcYawControl = inObject->Next.DisableMcYawControl;
     pbMsg.Next.Yaw = inObject->Next.Yaw;
@@ -250,6 +251,7 @@ uint32 PX4_PositionSetpointTripletMsg_t_Dec(const char *inBuffer, uint32 inSize,
     inOutObject->Current.AccelerationValid = pbMsg.Current.AccelerationValid;
     inOutObject->Current.LoiterRadius = pbMsg.Current.LoiterRadius;
     inOutObject->Current.Alt = pbMsg.Current.Alt;
+    inOutObject->Current.VelocityFrame = pbMsg.Current.VelocityFrame;
     inOutObject->Next.AccelerationIsForce = pbMsg.Next.AccelerationIsForce;
     inOutObject->Next.DisableMcYawControl = pbMsg.Next.DisableMcYawControl;
     inOutObject->Next.Yaw = pbMsg.Next.Yaw;

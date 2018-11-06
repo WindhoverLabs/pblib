@@ -34,6 +34,7 @@ message px4_position_setpoint_pb
 	optional bool AccelerationValid = 27;
 	optional float LoiterRadius = 28;
 	optional float Alt = 29;
+	optional uint32 VelocityFrame = 30;
 }
 
 message px4_position_setpoint_triplet_pb
