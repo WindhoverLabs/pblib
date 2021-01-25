@@ -209,13 +209,18 @@ add_airliner_app_def(pblib
     PUBLIC_INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}/../public_inc/
 
-    USER_DOCS   ${CMAKE_CURRENT_SOURCE_DIR}/user_doxy.in
     DESIGN_DOCS ${CMAKE_CURRENT_SOURCE_DIR}/detail_doxy.in
+    
+    REFERENCE_CONFIG
+        ${PROJECT_SOURCE_DIR}/apps/pblib/fsw/mission_inc
+        ${PROJECT_SOURCE_DIR}/apps/pblib/fsw/platform_inc
 )
 
 add_airliner_app_unit_test(pblib-ut
     UTASSERT
     NANOPB
+    NO_HELGRIND
+    NO_MASSIF
 
     SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/pb_lib.c
@@ -226,7 +231,6 @@ add_airliner_app_unit_test(pblib-ut
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/pbl_test_utils.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/pbl_test_utils.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/pbl_testrunner.c
-
 
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/
