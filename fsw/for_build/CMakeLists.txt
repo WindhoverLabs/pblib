@@ -33,7 +33,7 @@
  
 set(PROTOBUF_MSGS_DIR ${CMAKE_CURRENT_BINARY_DIR}/msgs/protobuf)
 
-add_airliner_app_def(pblib
+buildliner_add_app_def(pblib
     FILE PBLIB
     NANOPB
     SOURCES
@@ -216,7 +216,7 @@ add_airliner_app_def(pblib
         ${PROJECT_SOURCE_DIR}/apps/pblib/fsw/platform_inc
 )
 
-add_airliner_app_unit_test(pblib-ut
+buildliner_add_app_unit_test(pblib-ut
     UTASSERT
     NANOPB
     NO_HELGRIND
